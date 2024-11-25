@@ -1,25 +1,19 @@
-// utils_p1.js
-export function detectPlatform(url) {
-    if (url.includes('drive.google')) return 'drive';
-    if (url.includes('instagram')) return 'instagram';
-    if (url.includes('tiktok')) return 'tiktok';
-    if (url.includes('facebook')) return 'facebook';
-    return 'unknown';
+// store_m4.js
+export function saveToLocalStorage(data) {
+    localStorage.setItem('contentData', JSON.stringify(data));
 }
 
-export function formatDate(timestamp) {
-    return new Date(timestamp).toLocaleDateString();
+export function loadFromLocalStorage() {
+    const stored = localStorage.getItem('contentData');
+    return stored ? JSON.parse(stored) : { sourceVideos: [], postedContent: [] };
 }
 
-export function generateId() {
-    return '_' + Math.random().toString(36).substr(2, 9);
-}
-
-export function validateUrl(url) {
-    try {
-        new URL(url);
-        return true;
-    } catch {
-        return false;
-    }
+export function exportToCSV(data) {
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'content_tracker.csv';
+    a.click();
 }
