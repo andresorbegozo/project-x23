@@ -1,35 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Content Tracker</title>
-    <!-- React and ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- PapaParse for CSV -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.4.1/papaparse.min.js"></script>
-    <!-- Tailwind CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Custom styles -->
-    <link rel="stylesheet" href="./src/styles.css">
-</head>
-<body>
-    <div id="root"></div>
-    
-    <!-- Load components -->
-    <script type="text/babel" src="./src/services/api.js"></script>
-    <script type="text/babel" src="./src/services/analysis.js"></script>
-    <script type="text/babel" src="./src/components/ContentList.js"></script>
-    <script type="text/babel" src="./src/components/AnalysisPanel.js"></script>
-    <script type="text/babel" src="./src/App.js"></script>
-    
-    <!-- Initialize app -->
-    <script type="text/babel">
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+/* src/styles.css */
+.content-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.content-card:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.analysis-panel {
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
