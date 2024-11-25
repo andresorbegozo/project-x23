@@ -1,4 +1,6 @@
-// components_f2.js
+import { CONFIG } from './config_n2.js';
+import { formatDate } from './utils_p1.js';
+
 export function ContentCard({ content, onDelete }) {
     return (
         <div className="content-card">
