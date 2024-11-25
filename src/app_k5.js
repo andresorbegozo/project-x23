@@ -1,5 +1,5 @@
 // app_k5.js
-import { processVideo } from './processor_k9.js';
+import { processVideo } from 'src/processor_k9.js';
 import { saveToLocalStorage, loadFromLocalStorage, exportToCSV } from './store_m4.js';
 import { analyzeContentGaps } from './analyzer_v3.js';
 import { CONFIG } from './config_n2.js';
