@@ -1,10 +1,9 @@
-// app_k5.js
-import { processVideo } from 'src/processor_k9.js';
-import { saveToLocalStorage, loadFromLocalStorage, exportToCSV } from './store_m4.js';
-import { analyzeContentGaps } from './analyzer_v3.js';
-import { CONFIG } from './config_n2.js';
-import { detectPlatform, formatDate, generateId } from './utils_p1.js';
-import { ContentCard, AnalysisPanel } from './components_f2.js';
+import { processVideo } from '/project-x23/src/processor_k9.js';
+import { saveToLocalStorage, loadFromLocalStorage, exportToCSV } from '/project-x23/src/store_m4.js';
+import { analyzeContentGaps } from '/project-x23/src/analyzer_v3.js';
+import { CONFIG } from '/project-x23/src/config_n2.js';
+import { detectPlatform, formatDate, generateId } from '/project-x23/src/utils_p1.js';
+import { ContentCard, AnalysisPanel } from '/project-x23/src/components_f2.js';
 
 const { useState, useEffect } = React;
 
