@@ -1,87 +1,40 @@
-const { useState, useEffect } = React;
-const { createRoot } = ReactDOM;
+import { CONFIG } from '/project-x23/src/config_n2.js';
+import { detectPlatform } from '/project-x23/src/utils_p1.js';
 
-function ContentTracker() {
-    const [sourceVideos, setSourceVideos] = useState([]);
-    const [postedContent, setPostedContent] = useState([]);
-    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1CTuHtOBMAQ020hR4H5aCyKVMYvATzWLkU0i144YXbqs/export?format=csv';
+export function analyzeContentGaps(sourceVideos, postedContent) {
+    const unusedContent = findUnusedContent(sourceVideos, postedContent);
+    const oldContent = findOldContent(sourceVideos, postedContent);
+    const trendingTopics = analyzeTrends(postedContent);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    return { unusedContent, oldContent, trendingTopics };
+}
 
-    const loadData = async () => {
-        const response = await fetch(SHEET_URL);
-        const csv = await response.text();
-        const parsed = Papa.parse(csv, { header: true }).data;
-        setSourceVideos(parsed.filter(item => item.type === 'source'));
-        setPostedContent(parsed.filter(item => item.type === 'posted'));
-    };
-
-    const addContent = async (url, type) => {
-        const content = {
-            url,
-            type,
-            timestamp: new Date().toISOString(),
-            summary: 'Processing...',
-            keywords: []
-        };
-        
-        if (type === 'source') {
-            setSourceVideos([...sourceVideos, content]);
-        } else {
-            setPostedContent([...postedContent, content]);
-        }
-    };
-
-    return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6">Content Tracker</h1>
-            <div className="grid grid-cols-2 gap-6">
-                <div>
-                    <h2 className="text-xl font-bold mb-4">Source Videos</h2>
-                    <input 
-                        type="text"
-                        placeholder="Add Google Drive video URL"
-                        className="w-full p-2 border rounded mb-4"
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                                addContent(e.target.value, 'source');
-                                e.target.value = '';
-                            }
-                        }}
-                    />
-                    {sourceVideos.map(video => (
-                        <div key={video.url} className="border p-4 rounded mb-2">
-                            <div>{video.url}</div>
-                            <div className="text-sm text-gray-600">{video.summary}</div>
-                        </div>
-                    ))}
-                </div>
-                <div>
-                    <h2 className="text-xl font-bold mb-4">Posted Content</h2>
-                    <input 
-                        type="text"
-                        placeholder="Add social media post URL"
-                        className="w-full p-2 border rounded mb-4"
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                                addContent(e.target.value, 'posted');
-                                e.target.value = '';
-                            }
-                        }}
-                    />
-                    {postedContent.map(post => (
-                        <div key={post.url} className="border p-4 rounded mb-2">
-                            <div>{post.url}</div>
-                            <div className="text-sm text-gray-600">{post.summary}</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
+function findUnusedContent(sourceVideos, postedContent) {
+    return sourceVideos.filter(source => 
+        !postedContent.some(post => post.sourceUrl === source.url)
     );
 }
 
-const root = createRoot(document.getElementById('root'));
-root.render(<ContentTracker />);
+function findOldContent(sourceVideos, postedContent) {
+    const now = new Date();
+    return sourceVideos.filter(source => {
+        const lastUsed = postedContent
+            .filter(post => post.sourceUrl === source.url)
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+        
+        return lastUsed && 
+            (now - new Date(lastUsed.timestamp)) > (CONFIG.REFRESH_INTERVAL * 24 * 60 * 60 * 1000);
+    });
+}
+
+function analyzeTrends(postedContent) {
+    const recentPosts = postedContent
+        .filter(post => (new Date() - new Date(post.timestamp)) < (30 * 24 * 60 * 60 * 1000));
+    
+    return recentPosts
+        .flatMap(post => post.keywords)
+        .reduce((acc, keyword) => {
+            acc[keyword] = (acc[keyword] || 0) + 1;
+            return acc;
+        }, {});
+}
