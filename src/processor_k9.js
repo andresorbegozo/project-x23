@@ -1,7 +1,6 @@
 // processor_k9.js
 export async function processVideo(url) {
     try {
-        // Mock transcription and analysis for now
         const mockData = {
             transcription: "Sample transcription",
             summary: "Video summary here",
