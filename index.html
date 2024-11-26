@@ -13,102 +13,82 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        function ContentForm({ type, onSubmit }) {
+            return (
+                <form 
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const url = e.target.url.value;
+                        if (url) {
+                            onSubmit(url);
+                            e.target.url.value = '';
+                        }
+                    }}
+                >
+                    <input
+                        type="text"
+                        name="url"
+                        id={`${type}Input`}
+                        placeholder={`Add ${type} URL`}
+                        className="w-full p-2 border rounded mb-4"
+                    />
+                </form>
+            );
+        }
+
         function App() {
             const [sourceVideos, setSourceVideos] = React.useState([]);
             const [postedContent, setPostedContent] = React.useState([]);
             const [loading, setLoading] = React.useState(false);
-            const [error, setError] = React.useState(null);
 
-            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzO15T2MBlys8RnVjt5qKis_wFtchuu8rA_CzEbJOOLRZJsnqXfN-RTFGtXvJ0l_qcV/exec';
+            const addContent = (url, type) => {
+                const newContent = {
+                    url,
+                    timestamp: new Date().toLocaleString()
+                };
 
-            const handleAddContent = async (url, type) => {
-                if (!url.trim()) return;
-                
-                setLoading(true);
-                setError(null);
-
-                try {
-                    // Create URL with parameters
-                    const fullUrl = `${APPS_SCRIPT_URL}?url=${encodeURIComponent(url)}&type=${encodeURIComponent(type)}`;
-                    
-                    // Fetch using GET for simplicity
-                    const response = await fetch(fullUrl);
-                    console.log('Response:', response);
-                    
-                    // Add to local state
-                    if (type === 'source') {
-                        setSourceVideos([...sourceVideos, { url, type, timestamp: new Date().toISOString() }]);
-                    } else {
-                        setPostedContent([...postedContent, { url, type, timestamp: new Date().toISOString() }]);
-                    }
-                    
-                } catch (error) {
-                    console.error('Error:', error);
-                    setError('Failed to save content. Please try again.');
-                } finally {
-                    setLoading(false);
+                if (type === 'source') {
+                    setSourceVideos([...sourceVideos, newContent]);
+                } else {
+                    setPostedContent([...postedContent, newContent]);
                 }
+
+                // Make API call to Google Apps Script
+                const scriptURL = 'https://script.google.com/macros/s/AKfycbzO15T2MBlys8RnVjt5qKis_wFtchuu8rA_CzEbJOOLRZJsnqXfN-RTFGtXvJ0l_qcV/exec';
+                fetch(`${scriptURL}?url=${encodeURIComponent(url)}&type=${encodeURIComponent(type)}`)
+                    .then(response => console.log('Success:', response))
+                    .catch(error => console.error('Error:', error));
             };
 
             return (
                 <div className="p-6">
                     <h1 className="text-2xl font-bold mb-6">Content Tracker</h1>
                     
-                    {error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                            {error}
-                        </div>
-                    )}
-                    
-                    {loading && (
-                        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4">
-                            Loading...
-                        </div>
-                    )}
-                    
                     <div className="grid grid-cols-2 gap-6">
                         <div>
                             <h2 className="text-xl font-bold mb-4">Source Videos</h2>
-                            <input 
-                                type="text"
-                                placeholder="Add Google Drive video URL"
-                                className="w-full p-2 border rounded mb-4"
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleAddContent(e.target.value, 'source');
-                                        e.target.value = '';
-                                    }
-                                }}
+                            <ContentForm 
+                                type="source"
+                                onSubmit={(url) => addContent(url, 'source')}
                             />
                             {sourceVideos.map((video, index) => (
                                 <div key={index} className="border p-4 rounded mb-2">
-                                    <div>{video.url}</div>
-                                    <div className="text-sm text-gray-600">
-                                        Added: {new Date(video.timestamp).toLocaleString()}
-                                    </div>
+                                    <div className="font-medium">{video.url}</div>
+                                    <div className="text-sm text-gray-600">Added: {video.timestamp}</div>
                                 </div>
                             ))}
                         </div>
                         
                         <div>
                             <h2 className="text-xl font-bold mb-4">Posted Content</h2>
-                            <input 
-                                type="text"
-                                placeholder="Add social media post URL"
-                                className="w-full p-2 border rounded mb-4"
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleAddContent(e.target.value, 'posted');
-                                        e.target.value = '';
-                                    }
-                                }}
+                            <ContentForm 
+                                type="posted"
+                                onSubmit={(url) => addContent(url, 'posted')}
                             />
                             {postedContent.map((post, index) => (
                                 <div key={index} className="border p-4 rounded mb-2">
-                                    <div>{post.url}</div>
-                                    <div className="text-sm text-gray-600">
-                                        Added: {new Date(post.timestamp).toLocaleString()}
-                                    </div>
+                                    <div className="font-medium">{post.url}</div>
+                                    <div className="text-sm text-gray-600">Added: {post.timestamp}</div>
                                 </div>
                             ))}
                         </div>
