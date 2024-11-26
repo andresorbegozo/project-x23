@@ -18,41 +18,44 @@
             const [loading, setLoading] = React.useState(false);
             const [message, setMessage] = React.useState(null);
 
-            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxqB8JMdyVoj_VBzLzXF-plbAlK9gW8uxR6KnrPszfW_E6k6YXJK9fw4dHM_RB9ckvy/exec';
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4plphZFgTE7O4Hitg8HOMpo0aELXxZOEFiBt_tBw3ApeVJnGHyzFpCrTCOldkR46f/exec';
 
             const addItem = async (url, type) => {
+                if (!url.trim()) return;
+                
                 setLoading(true);
                 setMessage(null);
 
                 try {
-                    console.log(`Adding ${type}:`, url);
-                    
-                    // Create image element to test URL
-                    const img = document.createElement('img');
-                    img.src = `${SCRIPT_URL}?url=${encodeURIComponent(url)}&type=${encodeURIComponent(type)}`;
-                    
+                    // Create a hidden iframe for the request
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+
+                    // Set src with parameters
+                    iframe.src = `${SCRIPT_URL}?url=${encodeURIComponent(url)}&type=${encodeURIComponent(type)}`;
+
                     // Add to local state
-                    setItems(prev => [...prev, {
+                    const newItem = {
                         url,
                         type,
                         timestamp: new Date().toLocaleString()
-                    }]);
-
+                    };
+                    setItems(prev => [...prev, newItem]);
+                    
+                    // Show success message
                     setMessage({ type: 'success', text: 'Added successfully!' });
+                    
+                    // Cleanup iframe after 2 seconds
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 2000);
+
                 } catch (error) {
                     console.error('Error:', error);
                     setMessage({ type: 'error', text: 'Failed to add item' });
                 } finally {
                     setLoading(false);
-                }
-            };
-
-            const handleSubmit = (e, type) => {
-                e.preventDefault();
-                const url = e.target.url.value.trim();
-                if (url) {
-                    addItem(url, type);
-                    e.target.url.value = '';
                 }
             };
 
@@ -77,54 +80,60 @@
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="border p-4 rounded">
                             <h2 className="text-xl font-bold mb-4">Source Videos</h2>
-                            <form onSubmit={(e) => handleSubmit(e, 'source')} className="mb-4">
+                            <div className="mb-4">
                                 <input
                                     type="text"
-                                    name="url"
                                     placeholder="Add Google Drive video URL"
                                     className="w-full p-2 border rounded mb-2"
                                     disabled={loading}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            addItem(e.target.value, 'source');
+                                            e.target.value = '';
+                                        }
+                                    }}
                                 />
-                                <button 
-                                    type="submit" 
-                                    disabled={loading}
-                                    className="bg-blue-500 text-white px-4 py-2 rounded w-full disabled:opacity-50"
-                                >
-                                    Add Source
-                                </button>
-                            </form>
-                            {items.filter(item => item.type === 'source').map((item, index) => (
-                                <div key={index} className="border p-3 rounded mb-2">
-                                    <div className="break-all">{item.url}</div>
-                                    <div className="text-sm text-gray-600">{item.timestamp}</div>
-                                </div>
-                            ))}
+                            </div>
+                            <div className="space-y-2">
+                                {items.filter(item => item.type === 'source').map((item, index) => (
+                                    <div key={index} className="border p-3 rounded">
+                                        <a href={item.url} target="_blank" rel="noopener noreferrer" 
+                                           className="text-blue-600 hover:text-blue-800 break-all">
+                                            {item.url}
+                                        </a>
+                                        <div className="text-sm text-gray-600 mt-1">{item.timestamp}</div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         
                         <div className="border p-4 rounded">
                             <h2 className="text-xl font-bold mb-4">Posted Content</h2>
-                            <form onSubmit={(e) => handleSubmit(e, 'posted')} className="mb-4">
+                            <div className="mb-4">
                                 <input
                                     type="text"
-                                    name="url"
                                     placeholder="Add social media post URL"
                                     className="w-full p-2 border rounded mb-2"
                                     disabled={loading}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            addItem(e.target.value, 'posted');
+                                            e.target.value = '';
+                                        }
+                                    }}
                                 />
-                                <button 
-                                    type="submit" 
-                                    disabled={loading}
-                                    className="bg-blue-500 text-white px-4 py-2 rounded w-full disabled:opacity-50"
-                                >
-                                    Add Post
-                                </button>
-                            </form>
-                            {items.filter(item => item.type === 'posted').map((item, index) => (
-                                <div key={index} className="border p-3 rounded mb-2">
-                                    <div className="break-all">{item.url}</div>
-                                    <div className="text-sm text-gray-600">{item.timestamp}</div>
-                                </div>
-                            ))}
+                            </div>
+                            <div className="space-y-2">
+                                {items.filter(item => item.type === 'posted').map((item, index) => (
+                                    <div key={index} className="border p-3 rounded">
+                                        <a href={item.url} target="_blank" rel="noopener noreferrer" 
+                                           className="text-blue-600 hover:text-blue-800 break-all">
+                                            {item.url}
+                                        </a>
+                                        <div className="text-sm text-gray-600 mt-1">{item.timestamp}</div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
