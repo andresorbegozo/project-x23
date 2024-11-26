@@ -13,22 +13,24 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        function ContentForm({ type, onSubmit }) {
+        function ContentForm({ type, onSubmit, disabled }) {
+            const [inputValue, setInputValue] = React.useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (inputValue.trim()) {
+                    onSubmit(inputValue.trim());
+                    setInputValue('');
+                }
+            };
+
             return (
-                <form 
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        const url = e.target.url.value;
-                        if (url) {
-                            onSubmit(url);
-                            e.target.url.value = '';
-                        }
-                    }}
-                >
+                <form onSubmit={handleSubmit}>
                     <input
                         type="text"
-                        name="url"
-                        id={`${type}Input`}
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        disabled={disabled}
                         placeholder={`Add ${type} URL`}
                         className="w-full p-2 border rounded mb-4"
                     />
@@ -40,86 +42,106 @@
             const [sourceVideos, setSourceVideos] = React.useState([]);
             const [postedContent, setPostedContent] = React.useState([]);
             const [loading, setLoading] = React.useState(false);
-            const [message, setMessage] = React.useState(null);
+            const [error, setError] = React.useState(null);
 
-            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjBvZbVyaffuXL_86ZkQKGKLh_AXDNdnxQoVCAxheGuznQlwTAUUVijOPeMQ4W85N2/exec';
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTwVoUGEZciJvtW9ZpS840nJ8lKbhHFz4aWKIgX0yZZHJkoJcnoqDc0y4Io0wBNuTf/exec';
 
             const addContent = async (url, type) => {
                 setLoading(true);
-                setMessage(null);
-
-                const newContent = {
-                    url,
-                    timestamp: new Date().toLocaleString()
-                };
+                setError(null);
 
                 try {
-                    const response = await fetch(`${SCRIPT_URL}?url=${encodeURIComponent(url)}&type=${encodeURIComponent(type)}`);
-                    console.log('Response:', response);
-                    
-                    if (response.ok) {
-                        if (type === 'source') {
-                            setSourceVideos([...sourceVideos, newContent]);
-                        } else {
-                            setPostedContent([...postedContent, newContent]);
-                        }
-                        setMessage({ type: 'success', text: 'Content added successfully!' });
+                    // Create and format the data
+                    const data = new FormData();
+                    data.append('url', url);
+                    data.append('type', type);
+
+                    // Send request to Google Apps Script
+                    const response = await fetch(
+                        `${SCRIPT_URL}?url=${encodeURIComponent(url)}&type=${encodeURIComponent(type)}`,
+                        { method: 'GET', mode: 'no-cors' }
+                    );
+
+                    // Add to local state
+                    const newContent = {
+                        url,
+                        type,
+                        timestamp: new Date().toLocaleString()
+                    };
+
+                    if (type === 'source') {
+                        setSourceVideos(prev => [...prev, newContent]);
                     } else {
-                        setMessage({ type: 'error', text: 'Failed to add content.' });
+                        setPostedContent(prev => [...prev, newContent]);
                     }
-                } catch (error) {
-                    console.error('Error:', error);
-                    setMessage({ type: 'error', text: 'Failed to add content.' });
+
+                } catch (err) {
+                    console.error('Error:', err);
+                    setError('Failed to save content. Please try again.');
                 } finally {
                     setLoading(false);
                 }
             };
 
             return (
-                <div className="p-6">
+                <div className="p-6 max-w-6xl mx-auto">
                     <h1 className="text-2xl font-bold mb-6">Content Tracker</h1>
                     
-                    {message && (
-                        <div className={`p-4 mb-4 rounded ${
-                            message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}>
-                            {message.text}
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                            {error}
                         </div>
                     )}
                     
                     {loading && (
-                        <div className="p-4 mb-4 rounded bg-blue-100 text-blue-700">
-                            Loading...
+                        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4">
+                            Saving content...
                         </div>
                     )}
                     
-                    <div className="grid grid-cols-2 gap-6">
-                        <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="border p-4 rounded">
                             <h2 className="text-xl font-bold mb-4">Source Videos</h2>
                             <ContentForm 
-                                type="source"
+                                type="source" 
                                 onSubmit={(url) => addContent(url, 'source')}
+                                disabled={loading}
                             />
-                            {sourceVideos.map((video, index) => (
-                                <div key={index} className="border p-4 rounded mb-2">
-                                    <div className="font-medium">{video.url}</div>
-                                    <div className="text-sm text-gray-600">Added: {video.timestamp}</div>
-                                </div>
-                            ))}
+                            <div className="space-y-2">
+                                {sourceVideos.map((video, index) => (
+                                    <div key={index} className="border p-3 rounded bg-gray-50">
+                                        <a href={video.url} target="_blank" rel="noopener noreferrer" 
+                                           className="text-blue-600 hover:text-blue-800 break-all">
+                                            {video.url}
+                                        </a>
+                                        <div className="text-sm text-gray-600 mt-1">
+                                            Added: {video.timestamp}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         
-                        <div>
+                        <div className="border p-4 rounded">
                             <h2 className="text-xl font-bold mb-4">Posted Content</h2>
                             <ContentForm 
-                                type="posted"
+                                type="posted" 
                                 onSubmit={(url) => addContent(url, 'posted')}
+                                disabled={loading}
                             />
-                            {postedContent.map((post, index) => (
-                                <div key={index} className="border p-4 rounded mb-2">
-                                    <div className="font-medium">{post.url}</div>
-                                    <div className="text-sm text-gray-600">Added: {post.timestamp}</div>
-                                </div>
-                            ))}
+                            <div className="space-y-2">
+                                {postedContent.map((post, index) => (
+                                    <div key={index} className="border p-3 rounded bg-gray-50">
+                                        <a href={post.url} target="_blank" rel="noopener noreferrer"
+                                           className="text-blue-600 hover:text-blue-800 break-all">
+                                            {post.url}
+                                        </a>
+                                        <div className="text-sm text-gray-600 mt-1">
+                                            Added: {post.timestamp}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
