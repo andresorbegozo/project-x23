@@ -16,112 +16,61 @@
         function App() {
             const [sourceVideos, setSourceVideos] = React.useState([]);
             const [postedContent, setPostedContent] = React.useState([]);
-            const [loading, setLoading] = React.useState(true);
+            const [loading, setLoading] = React.useState(false);
             const [error, setError] = React.useState(null);
 
-            // Sheet properties
-            const SHEET_ID = '1CTuHtOBMAQ020hR4H5aCyKVMYvATzWLkU0i144YXbqs';
-            const BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
-            const SHEET_URL = `${BASE_URL}/gviz/tq?tqx=out:json`;
-            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydTvdF9VTGOJNiLyY-d72dNGxtGbdlZx9Y_HaS5E6l82HziA9OffaGr4w84iqCLFaX/exec';
-
-            React.useEffect(() => {
-                fetchData();
-            }, []);
-
-            const fetchData = async () => {
-                try {
-                    setLoading(true);
-                    const response = await fetch(SHEET_URL);
-                    const text = await response.text();
-                    const jsonData = JSON.parse(text.substr(47).slice(0, -2));
-                    
-                    const cols = jsonData.table.cols.map(col => col.label);
-                    const rows = jsonData.table.rows.map(row => {
-                        const item = {};
-                        row.c.forEach((cell, i) => {
-                            item[cols[i]] = cell ? cell.v : '';
-                        });
-                        return item;
-                    });
-
-                    setSourceVideos(rows.filter(item => item.type === 'source'));
-                    setPostedContent(rows.filter(item => item.type === 'posted'));
-                    setError(null);
-                } catch (err) {
-                    console.error('Error fetching data:', err);
-                    setError('Failed to load data. Please try again later.');
-                } finally {
-                    setLoading(false);
-                }
-            };
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzO15T2MBlys8RnVjt5qKis_wFtchuu8rA_CzEbJOOLRZJsnqXfN-RTFGtXvJ0l_qcV/exec';
 
             const handleAddContent = async (url, type) => {
                 if (!url.trim()) return;
                 
-                const formData = new FormData();
-                formData.append('url', url);
-                formData.append('type', type);
-                formData.append('timestamp', new Date().toISOString());
+                setLoading(true);
+                setError(null);
 
                 try {
-                    setLoading(true);
-                    console.log('Sending data:', { url, type });
-
-                    const response = await fetch(APPS_SCRIPT_URL, {
-                        method: 'POST',
-                        body: formData
-                    });
+                    // Create URL with parameters
+                    const fullUrl = `${APPS_SCRIPT_URL}?url=${encodeURIComponent(url)}&type=${encodeURIComponent(type)}`;
                     
+                    // Fetch using GET for simplicity
+                    const response = await fetch(fullUrl);
                     console.log('Response:', response);
                     
-                    // Wait for the sheet to update
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    
-                    // Refresh the data
-                    await fetchData();
+                    // Add to local state
+                    if (type === 'source') {
+                        setSourceVideos([...sourceVideos, { url, type, timestamp: new Date().toISOString() }]);
+                    } else {
+                        setPostedContent([...postedContent, { url, type, timestamp: new Date().toISOString() }]);
+                    }
                     
                 } catch (error) {
-                    console.error('Error adding content:', error);
+                    console.error('Error:', error);
                     setError('Failed to save content. Please try again.');
                 } finally {
                     setLoading(false);
                 }
             };
 
-            if (loading) {
-                return (
-                    <div className="p-6 flex items-center justify-center">
-                        <div className="text-xl">Loading...</div>
-                    </div>
-                );
-            }
-
-            if (error) {
-                return (
-                    <div className="p-6">
-                        <div className="text-red-500 mb-4">{error}</div>
-                        <button 
-                            onClick={fetchData}
-                            className="bg-blue-500 text-white px-4 py-2 rounded"
-                        >
-                            Try Again
-                        </button>
-                    </div>
-                );
-            }
-
             return (
                 <div className="p-6">
                     <h1 className="text-2xl font-bold mb-6">Content Tracker</h1>
+                    
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {error}
+                        </div>
+                    )}
+                    
+                    {loading && (
+                        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4">
+                            Loading...
+                        </div>
+                    )}
                     
                     <div className="grid grid-cols-2 gap-6">
                         <div>
                             <h2 className="text-xl font-bold mb-4">Source Videos</h2>
                             <input 
                                 type="text"
-                                id="sourceInput"
-                                name="sourceInput"
                                 placeholder="Add Google Drive video URL"
                                 className="w-full p-2 border rounded mb-4"
                                 onKeyPress={(e) => {
@@ -133,12 +82,10 @@
                             />
                             {sourceVideos.map((video, index) => (
                                 <div key={index} className="border p-4 rounded mb-2">
-                                    <div className="font-medium">{video.url}</div>
-                                    <div className="text-sm text-gray-600">Added: {
-                                        video.timestamp 
-                                            ? new Date(video.timestamp).toLocaleString()
-                                            : 'Date not available'
-                                    }</div>
+                                    <div>{video.url}</div>
+                                    <div className="text-sm text-gray-600">
+                                        Added: {new Date(video.timestamp).toLocaleString()}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -147,8 +94,6 @@
                             <h2 className="text-xl font-bold mb-4">Posted Content</h2>
                             <input 
                                 type="text"
-                                id="postedInput"
-                                name="postedInput"
                                 placeholder="Add social media post URL"
                                 className="w-full p-2 border rounded mb-4"
                                 onKeyPress={(e) => {
@@ -160,12 +105,10 @@
                             />
                             {postedContent.map((post, index) => (
                                 <div key={index} className="border p-4 rounded mb-2">
-                                    <div className="font-medium">{post.url}</div>
-                                    <div className="text-sm text-gray-600">Added: {
-                                        post.timestamp 
-                                            ? new Date(post.timestamp).toLocaleString()
-                                            : 'Date not available'
-                                    }</div>
+                                    <div>{post.url}</div>
+                                    <div className="text-sm text-gray-600">
+                                        Added: {new Date(post.timestamp).toLocaleString()}
+                                    </div>
                                 </div>
                             ))}
                         </div>
