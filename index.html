@@ -23,7 +23,7 @@
             const SHEET_ID = '1CTuHtOBMAQ020hR4H5aCyKVMYvATzWLkU0i144YXbqs';
             const BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
             const SHEET_URL = `${BASE_URL}/gviz/tq?tqx=out:json`;
-            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYnYFODiAPq2jYVIrTt1iv86nc5kfReu9Uh8CP02Q1Pv1snXQi98Jp_6n0biYxs1de/exec';
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHfun3HP-XHFD0tVMEPZQf4sOFnBkf7Be-EnvV-N58LMh6rXswRAF5f9PRQuQjD9Qg/exec';
 
             React.useEffect(() => {
                 fetchData();
@@ -67,17 +67,21 @@
 
                 try {
                     setLoading(true);
+                    console.log('Sending data:', newContent);
+
                     const response = await fetch(APPS_SCRIPT_URL, {
                         method: 'POST',
-                        mode: 'no-cors', // Important for CORS handling
+                        mode: 'no-cors',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify(newContent)
                     });
-
-                    // Wait a moment for the sheet to update
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    console.log('Response:', response);
+                    
+                    // Wait for the sheet to update
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     
                     // Refresh the data
                     await fetchData();
